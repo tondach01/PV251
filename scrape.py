@@ -100,7 +100,7 @@ def scrape_all(replicas: str = "replicas.csv", episodes: str = "episodes.csv"):
             character, replica = parse_replica(rep)
             if character is None:
                 continue
-            print(f'{ep_id},{character},"{replica}"', file=out_rep)
+            print(f'{ep_id},"{character}","{replica}"', file=out_rep)
         ep_id += 1
     out_epi.close()
     out_rep.close()

@@ -34,13 +34,6 @@ def ep_properties(episode: str):
     return properties
 
 
-def ep_webpage(properties):
-    ep = str(properties['episode_no']) if properties['episode_no'] > 9 or properties['series_no'] < 2 \
-        else '0' + str(properties['episode_no'])
-    return (f"https://bigbangtrans.wordpress.com/series-{properties['series_no']}-episode-{ep}-"
-            f"{re.sub(r' ', '-', properties['episode_name'].lower())}/")
-
-
 def links():
     pages = {}
     r = requests.get("https://bigbangtrans.wordpress.com/about/")

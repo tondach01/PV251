@@ -31,6 +31,8 @@ def replicas_base():
 
 def replicas_words(base: pd.DataFrame):
     df = base.copy(deep=True)
+    df.dropna(subset=["Character"], inplace=True)
+
     df["Word"] = df["Replica"].apply(lambda x: str(x).split())
     df.drop(columns=["Replica"], inplace=True)
     df = df.explode("Word", ignore_index=True)

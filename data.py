@@ -50,7 +50,7 @@ def replicas_words(base: pd.DataFrame):
 # word list from sketchengine.eu
 def mask_frequent(df, wordlist: str = "wordlist_ententen21.csv"):
     wl = set(pd.read_csv(wordlist, header=2)["Item"].values)
-    df["Word"] = df["Word"].apply(lambda x: x if x not in wl else "***")
+    df["Word"] = df["Word"].apply(lambda x: x if x not in wl else np.nan)
 
 
 def replicas_interactions(base: pd.DataFrame):
@@ -62,5 +62,7 @@ def replicas_interactions(base: pd.DataFrame):
 
 if __name__ == "__main__":
     b = replicas_base()
+    w = replicas_words(b)
     i = replicas_interactions(b)
-    pass
+    w.to_csv("data_words.csv", index=False)
+    i.to_csv("data_interactions.csv", index=False)

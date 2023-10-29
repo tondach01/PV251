@@ -1,4 +1,6 @@
 import plotly.express as px
+import plotly.graph_objects as po
+import plotly.subplots as ps
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -29,18 +31,24 @@ def stream_graph(df: pd.DataFrame, s=None, ep=None):
 
     joined = all_tuples.merge(counts, how="left", on=["Character", "EpisodeID"])
     joined["Count"] = joined["Count"].fillna(0)
-    x = np.arange(1, 232)
-    y = joined.pivot(index="Character", columns="EpisodeID", values="Count")
-    #fig = px.area(joined, x="EpisodeID", y="Count", color="Character", color_discrete_map=COLORS,
-    #              category_orders={"Character": ["Raj", "Howard", "Leonard", "Sheldon", "Penny", "Bernadette",
-    #                                             "Amy", "Other"]})
-    #fig.show()
 
-    fig, ax = plt.subplots(figsize=(10, 7))
-    ax.stackplot(x, y, baseline="sym", colors=[COLORS[c] for c in sorted(COLORS.keys())], labels=y.index)
-    ax.legend()
+    def negate_women_counts(row):
+        row["Count"] = -row["Count"] if row["Character"] in ["Amy", "Bernadette", "Penny", "Other"] else row["Count"]
+        return row
 
-    plt.show()
+    joined = joined.apply(negate_women_counts, axis=1)
+    bar = px.bar(joined, x="EpisodeID", y="Count", color="Character", color_discrete_map=COLORS,
+                 category_orders={"Character": ["Sheldon", "Leonard", "Howard", "Raj", "Other", "Penny", "Bernadette",
+                                                "Amy"]})
+
+    men = joined.loc[joined["Character"].isin(["Sheldon", "Leonard", "Howard", "Raj"])]
+
+    women = joined.loc[joined["Character"].isin(["Penny", "Bernadette", "Amy", "Other"])]
+
+    # TODO bar.add_layout_image for episode and season
+    for i, x in enumerate([0, 17, 40, 63, 87, 111, 135, 159, 183, 207]):
+        bar.add_vline(x=x, annotation={"text": f"Season{i+1}"}, opacity=0.3)
+    bar.show()
 
 
 if __name__ == "__main__":

@@ -1,30 +1,23 @@
 import plotly.express as px
-import plotly.graph_objects as po
-import plotly.subplots as ps
-import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from scipy import stats
 
 COLORS = {
-    "Amy": "#fee6ce",
-    "Bernadette": "#fdae6b",
-    "Penny": "#e6550d",
-    "Sheldon": "#2171b5",
-    "Leonard": "#6bead6",
-    "Howard": "#bdd7e7",
-    "Raj": "#eff3ff",
+    "Amy": "#fecc5c",
+    "Bernadette": "#fd8d3c",
+    "Penny": "#f03b20",
+    "Sheldon": "#045a8d",
+    "Leonard": "#2b8cbe",
+    "Howard": "#74a9cf",
+    "Raj": "#bdc9e1",
     "Other": "#238b45"
 }
 
-
-def gaussian_smooth(x, y, sd=5):
-    weights = np.array([stats.norm.pdf(x, m, sd) for m in x])
-    weights = weights / weights.sum(1)
-    return (weights * y).sum(1)
+SEASONS = [0, 17, 40, 63, 87, 111, 135, 159, 183, 207, 231]
 
 
-def stream_graph(df: pd.DataFrame, s=None, ep=None):
+def stream_graph(df: pd.DataFrame, s=0, ep=0):
     counts = pd.DataFrame({'Count': df.groupby(["EpisodeID", "Character"]).size()}).reset_index()
     all_tuples = (pd.DataFrame(set(df["EpisodeID"].values), columns=["EpisodeID"])
                   .merge(pd.DataFrame(set(df["Character"].values), columns=["Character"]), how="cross"))
@@ -40,18 +33,50 @@ def stream_graph(df: pd.DataFrame, s=None, ep=None):
     bar = px.bar(joined, x="EpisodeID", y="Count", color="Character", color_discrete_map=COLORS,
                  category_orders={"Character": ["Sheldon", "Leonard", "Howard", "Raj", "Other", "Penny", "Bernadette",
                                                 "Amy"]})
+    bar.update_layout({"plot_bgcolor": "#ffffff", "showlegend": False, "bargap": 0})
+    bar.update_yaxes(visible=False)
+    bar.update_xaxes(visible=False)
 
-    men = joined.loc[joined["Character"].isin(["Sheldon", "Leonard", "Howard", "Raj"])]
+    for i, x in enumerate(SEASONS[:-1]):
+        bar.add_vline(x=x-0.5, annotation={"text": f"Season{i+1}"}, opacity=0.2)
 
-    women = joined.loc[joined["Character"].isin(["Penny", "Bernadette", "Amy", "Other"])]
-
-    # TODO bar.add_layout_image for episode and season
-    for i, x in enumerate([0, 17, 40, 63, 87, 111, 135, 159, 183, 207]):
-        bar.add_vline(x=x, annotation={"text": f"Season{i+1}"}, opacity=0.3)
+    if s != 0:
+        ep_index = SEASONS[s - 1] + (ep - 1)
+        if ep != 0:
+            ep_height = sum(
+                [joined.loc[(joined["Character"] == x) & (joined["EpisodeID"] == ep_index), ["Count"]].values[0][0]
+                 for x in ["Sheldon", "Leonard", "Howard", "Raj"]]
+            )
+            ep_depth = sum(
+                [joined.loc[(joined["Character"] == x) & (joined["EpisodeID"] == ep_index), ["Count"]].values[0][0]
+                 for x in ["Other", "Penny", "Bernadette", "Amy"]]
+            )
+            bar.add_shape({"fillcolor": "#de2d26", "opacity": 0.9, "type": "path", "line": {"color": "#de2d26"},
+                           "path": f"M {ep_index - 1} {ep_height + 500} H {ep_index + 1} "
+                                   f"L {ep_index} {ep_height + 250} Z"})
+            bar.add_shape({"fillcolor": "#de2d26", "opacity": 0.9, "type": "path", "line": {"color": "#de2d26"},
+                           "path": f"M {ep_index - 1} {ep_depth - 500} H {ep_index + 1} "
+                                   f"L {ep_index} {ep_depth - 250} Z"})
+        else:
+            ep_height = max(
+                [sum([joined.loc[(joined["Character"] == x) & (joined["EpisodeID"] == i), ["Count"]].values[0][0]
+                 for x in ["Sheldon", "Leonard", "Howard", "Raj"]]) for i in range(SEASONS[s - 1], SEASONS[s])]
+            )
+            ep_depth = min(
+                [sum([joined.loc[(joined["Character"] == x) & (joined["EpisodeID"] == i), ["Count"]].values[0][0]
+                      for x in ["Other", "Penny", "Bernadette", "Amy"]]) for i in range(SEASONS[s - 1], SEASONS[s])]
+            )
+            bar.add_shape({"fillcolor": "#de2d26", "opacity": 0.9, "type": "path", "line": {"color": "#de2d26"},
+                           "path": f"M {SEASONS[s - 1] - 0.5} {ep_height + 100} H {SEASONS[s] - 0.5} "
+                                   f"V {ep_height + 10} H {SEASONS[s] - 1.5} V {ep_height + 50} "
+                                   f"H {SEASONS[s - 1] + 0.5} V {ep_height + 10} H {SEASONS[s - 1] - 0.5} Z"})
+            bar.add_shape({"fillcolor": "#de2d26", "opacity": 0.9, "type": "path", "line": {"color": "#de2d26"},
+                           "path": f"M {SEASONS[s - 1] - 0.5} {ep_depth - 100} H {SEASONS[s] - 0.5} V {ep_depth - 10} "
+                                   f"H {SEASONS[s] - 1.5} V {ep_depth - 50} H {SEASONS[s - 1] + 0.5} "
+                                   f"V {ep_depth - 10} H {SEASONS[s - 1] - 0.5} Z"})
     bar.show()
 
 
 if __name__ == "__main__":
-    import data
     d = pd.read_csv("data_words.csv")
-    stream_graph(d)
+    stream_graph(d, s=2)

@@ -46,7 +46,20 @@ def replicas_words(base: pd.DataFrame):
 
     mask_frequent(df)
 
-    return df
+    counts = pd.DataFrame({'Count': df.groupby(["EpisodeID", "Character"]).size()}).reset_index()
+    all_tuples = (pd.DataFrame(set(df["EpisodeID"].values), columns=["EpisodeID"])
+                  .merge(pd.DataFrame(set(df["Character"].values), columns=["Character"]), how="cross"))
+
+    joined = all_tuples.merge(counts, how="left", on=["Character", "EpisodeID"])
+    joined["Count"] = joined["Count"].fillna(0)
+
+    def negate_women_counts(row):
+        row["Count"] = -row["Count"] if row["Character"] in ["Amy", "Bernadette", "Penny", "Other"] else row["Count"]
+        return row
+
+    joined = joined.apply(negate_women_counts, axis=1)
+
+    return joined
 
 
 # word list from sketchengine.eu

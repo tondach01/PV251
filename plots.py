@@ -1,7 +1,5 @@
 import plotly.express as px
 import pandas as pd
-import numpy as np
-from scipy import stats
 
 COLORS = {
     "Amy": "#fecc5c",
@@ -18,19 +16,7 @@ SEASONS = [0, 17, 40, 63, 87, 111, 135, 159, 183, 207, 231]
 
 
 def stream_graph(df: pd.DataFrame, s=0, ep=0):
-    counts = pd.DataFrame({'Count': df.groupby(["EpisodeID", "Character"]).size()}).reset_index()
-    all_tuples = (pd.DataFrame(set(df["EpisodeID"].values), columns=["EpisodeID"])
-                  .merge(pd.DataFrame(set(df["Character"].values), columns=["Character"]), how="cross"))
-
-    joined = all_tuples.merge(counts, how="left", on=["Character", "EpisodeID"])
-    joined["Count"] = joined["Count"].fillna(0)
-
-    def negate_women_counts(row):
-        row["Count"] = -row["Count"] if row["Character"] in ["Amy", "Bernadette", "Penny", "Other"] else row["Count"]
-        return row
-
-    joined = joined.apply(negate_women_counts, axis=1)
-    bar = px.bar(joined, x="EpisodeID", y="Count", color="Character", color_discrete_map=COLORS,
+    bar = px.bar(df, x="EpisodeID", y="Count", color="Character", color_discrete_map=COLORS,
                  category_orders={"Character": ["Sheldon", "Leonard", "Howard", "Raj", "Other", "Penny", "Bernadette",
                                                 "Amy"]})
     bar.update_layout({"plot_bgcolor": "#ffffff", "showlegend": False, "bargap": 0})
@@ -44,11 +30,11 @@ def stream_graph(df: pd.DataFrame, s=0, ep=0):
         ep_index = SEASONS[s - 1] + (ep - 1)
         if ep != 0:
             ep_height = sum(
-                [joined.loc[(joined["Character"] == x) & (joined["EpisodeID"] == ep_index), ["Count"]].values[0][0]
+                [df.loc[(df["Character"] == x) & (df["EpisodeID"] == ep_index), ["Count"]].values[0][0]
                  for x in ["Sheldon", "Leonard", "Howard", "Raj"]]
             )
             ep_depth = sum(
-                [joined.loc[(joined["Character"] == x) & (joined["EpisodeID"] == ep_index), ["Count"]].values[0][0]
+                [df.loc[(df["Character"] == x) & (df["EpisodeID"] == ep_index), ["Count"]].values[0][0]
                  for x in ["Other", "Penny", "Bernadette", "Amy"]]
             )
             bar.add_shape({"fillcolor": "#de2d26", "opacity": 0.9, "type": "path", "line": {"color": "#de2d26"},
@@ -59,11 +45,11 @@ def stream_graph(df: pd.DataFrame, s=0, ep=0):
                                    f"L {ep_index} {ep_depth - 250} Z"})
         else:
             ep_height = max(
-                [sum([joined.loc[(joined["Character"] == x) & (joined["EpisodeID"] == i), ["Count"]].values[0][0]
+                [sum([df.loc[(df["Character"] == x) & (df["EpisodeID"] == i), ["Count"]].values[0][0]
                  for x in ["Sheldon", "Leonard", "Howard", "Raj"]]) for i in range(SEASONS[s - 1], SEASONS[s])]
             )
             ep_depth = min(
-                [sum([joined.loc[(joined["Character"] == x) & (joined["EpisodeID"] == i), ["Count"]].values[0][0]
+                [sum([df.loc[(df["Character"] == x) & (df["EpisodeID"] == i), ["Count"]].values[0][0]
                       for x in ["Other", "Penny", "Bernadette", "Amy"]]) for i in range(SEASONS[s - 1], SEASONS[s])]
             )
             bar.add_shape({"fillcolor": "#de2d26", "opacity": 0.9, "type": "path", "line": {"color": "#de2d26"},

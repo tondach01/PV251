@@ -39,27 +39,33 @@ def replicas_words(base: pd.DataFrame):
 
     df["Word"] = df["Word"].apply(lambda x: str(x).strip(".,!?-:\"…”;"))
     df["Word"].replace("", np.nan, inplace=True)
-    df.dropna(subset=["Word"])
+    df.dropna(subset=["Word"], inplace=True)
 
     val = set(df["Word"].values)
     df["Word"] = df["Word"].apply(lambda x: str(x).lower() if str(x).lower() in val else x)
 
     mask_frequent(df)
 
-    counts = pd.DataFrame({'Count': df.groupby(["EpisodeID", "Character"]).size()}).reset_index()
+    by_episode = pd.DataFrame({'Count': df.groupby(["EpisodeID", "Character"]).size()}).reset_index()
+    by_ep_word = pd.DataFrame({'Count': df.groupby(["EpisodeID", "Character", "Word"]).size()}).reset_index()
     all_tuples = (pd.DataFrame(set(df["EpisodeID"].values), columns=["EpisodeID"])
                   .merge(pd.DataFrame(set(df["Character"].values), columns=["Character"]), how="cross"))
 
-    joined = all_tuples.merge(counts, how="left", on=["Character", "EpisodeID"])
-    joined["Count"] = joined["Count"].fillna(0)
+    episode_counts = all_tuples.merge(by_episode, how="left", on=["Character", "EpisodeID"])
+    episode_counts["Count"].fillna(0, inplace=True)
+
+    ep_word_counts = all_tuples.merge(by_ep_word, how="left", on=["Character", "EpisodeID"])
+    ep_word_counts["Count"].fillna(0, inplace=True)
 
     def negate_women_counts(row):
         row["Count"] = -row["Count"] if row["Character"] in ["Amy", "Bernadette", "Penny", "Other"] else row["Count"]
+        row["Count"] += 0.1 if row["Count"] == 0 and row["Character"] == "Raj" \
+            else (-0.1 if row["Count"] == 0 and row["Character"] in ["Amy", "Bernadette", "Penny", "Other"] else 0)
         return row
 
-    joined = joined.apply(negate_women_counts, axis=1)
+    episode_counts = episode_counts.apply(negate_women_counts, axis=1)
 
-    return joined
+    return episode_counts, ep_word_counts
 
 
 # word list from sketchengine.eu
@@ -72,12 +78,14 @@ def replicas_interactions(base: pd.DataFrame):
     df = base.copy(deep=True)
     df["ReplyTo"] = df["Character"].shift(fill_value=np.nan)
     df.drop(columns=["Replica"], inplace=True)
+    df.dropna(how="any", inplace=True)
     return df
 
 
 if __name__ == "__main__":
     b = replicas_base()
-    w = replicas_words(b)
+    e, w = replicas_words(b)
     i = replicas_interactions(b)
-    w.to_csv("data_words.csv", index=False)
+    w.to_csv("data_ep_words.csv", index=False)
+    e.to_csv("data_ep_counts.csv", index=False)
     i.to_csv("data_interactions.csv", index=False)

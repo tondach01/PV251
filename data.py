@@ -56,14 +56,16 @@ def replicas_words(base: pd.DataFrame):
 
     ep_word_counts = all_tuples.merge(by_ep_word, how="left", on=["Character", "EpisodeID"])
     ep_word_counts["Count"].fillna(0, inplace=True)
+    index = ep_word_counts.loc[ep_word_counts["Word"] == "***"].index
+    ep_word_counts.drop(index=index, inplace=True)
 
-    def negate_women_counts(row):
+    def prepare_for_stacking(row):
         row["Count"] = -row["Count"] if row["Character"] in ["Amy", "Bernadette", "Penny", "Other"] else row["Count"]
         row["Count"] += 0.1 if row["Count"] == 0 and row["Character"] == "Raj" \
             else (-0.1 if row["Count"] == 0 and row["Character"] in ["Amy", "Bernadette", "Penny", "Other"] else 0)
         return row
 
-    episode_counts = episode_counts.apply(negate_women_counts, axis=1)
+    episode_counts = episode_counts.apply(prepare_for_stacking, axis=1)
 
     return episode_counts, ep_word_counts
 

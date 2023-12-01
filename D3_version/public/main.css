@@ -16,7 +16,7 @@ body{
 }
 
 #interactions{
-  width:45%;
+  width:55%;
   height:50vh;
   /*border:1px solid red;*/
   font-size: calc(2vw + 2vh);
@@ -24,7 +24,7 @@ body{
 }
 
 #wordcloud{
-  width:55%;
+  width:45%;
   height:45vh;
   /*border:1px solid red;*/
   font-size: calc(2vw + 2vh);
@@ -44,4 +44,19 @@ body{
   border-width: "1px";
   border-radius: "5px";
   padding: "10px";
+}
+
+.atom-label{
+  font-size: x-small;
+  text-anchor: middle;
+  alignment-baseline: middle;
+}
+
+.atom{
+  opacity: .85;
+}
+
+.atom-edge{
+  stroke-width: 2;
+  stroke: black;
 }

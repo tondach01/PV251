@@ -18,11 +18,12 @@ var width = d3.select("#streamgraph").node().clientWidth;
 var height = d3.select("#streamgraph").node().clientHeight;
 var streamScaleX;
 
-//episode selection
+//selection
 var season = 0;
 var episode = 0;
 var seasonStarts = [0, 17, 40, 63, 87, 111, 135, 159, 183, 207, 231];
-var character;
+var character = "Sheldon";
+var allCharacters = ["Amy", "Bernadette", "Penny", "Other", "Howard", "Leonard", "Raj", "Sheldon"];
 
 //colors
 var colorScale = {
@@ -37,61 +38,29 @@ var colorScale = {
 };
 
 //Loading data from CSV
-d3.csv("./data/data_ep_counts.csv", function(d) {
-  return {
-    EpisodeID: +d["EpisodeID"],
-    Character: d["Character"],
-    Count: +d["Count"]
-  }
-})
-  .then(function(csvData) {
-    episodeCountsData = csvData;
-    streamScaleX = d3.scaleLinear()
+Promise.all([
+    d3.csv("./public/data/data_ep_counts.csv"),
+    d3.csv("./public/data/data_interactions.csv"),
+    d3.csv("./public/data/data_ep_words.csv"),
+    d3.csv("./public/data/episodes.csv")
+]).then(function(files) {
+  episodeCountsData = files[0]
+  interactionsData = files[1]
+  wordCountsData = files[2]
+  episodeData = files[3]
+
+  streamScaleX = d3.scaleLinear()
       .domain([ 0, 231 ])
       .range([ 0, width ]);
-  });
+    
+  //load map and initialise the views
+  init();
 
-d3.csv("./data/data_ep_words.csv", function(d) {
-  return {
-    EpisodeID: +d["EpisodeID"],
-    Character: d["Character"],
-    Word: d["Word"],
-    Count: +d["Count"]
-  }
+  // data visualization
+  visualization();
 })
-  .then(function(csvData) {
-    wordCountsData = csvData;
-  });
 
-d3.csv("./data/data_interactions.csv", function(d) {
-  return {
-    EpisodeID: +d["EpisodeID"],
-    Character: d["Character"],
-    ReplyTo: d["ReplyTo"]
-  }
-})
-  .then(function(csvData) {
-    interactionsData = csvData;
-  });
 
-d3.csv("./data/episodes.csv", function(d) {
-  return {
-    EpisodeID: +d["ID"],
-    Season: +d["Series"],
-    EpisodeNo: +d["EpisodeNumber"],
-    EpisodeName: d["EpisodeName"]
-  }
-})
-  .then(function(csvData) {
-    //store loaded data in global variable
-    episodeData = csvData;
-
-    //load map and initialise the views
-    init();
-
-    // data visualization
-    visualization();
-  });
 
 /*----------------------
 INITIALIZE VISUALIZATION
@@ -190,6 +159,7 @@ BEGINNING OF VISUALIZATION
 ----------------------*/
 function visualization() {
   streamgraph();
+  atoms();
 }
 
 function streamgraph(){
@@ -279,4 +249,124 @@ function streamgraph(){
         character = i.key
         console.log(character)
       })
+}
+
+function atoms(){
+  d3.selectAll(".atom").remove();
+  d3.selectAll(".atom-label")
+  var centerX = interactions.attr("width") / 2;
+  var centerY = interactions.attr("height") / 2;
+  var radius = d3.min([centerX, centerY]) / 4;
+
+  interactions.append("circle")
+    .attr("class", "atom")
+    .attr("cx", centerX)
+    .attr("cy", centerY)
+    .attr("r", radius)
+    .style("fill", colorScale[character])
+  
+  interactions.append("text")
+    .attr("class", "atom-label")
+    .attr("x", centerX)
+    .attr("y", centerY)
+    .text(character)
+
+  var rotation = 0;
+  var edgeLength = radius;
+  var interactionCounts = countInteractions();
+
+  for(let i = 0; i < allCharacters.length; i++){
+    if(allCharacters[i] == character){
+      continue
+    }
+
+    var dx = Math.sin(rotation) * (2* radius + edgeLength);
+    var dy = Math.cos(rotation) * (2* radius + edgeLength);
+
+    interactions.append("circle")
+      .attr("class", "atom")
+      .attr("cx", centerX + dx)
+      .attr("cy", centerY + dy)
+      .attr("r", radius)
+      .style("fill", colorScale[allCharacters[i]])
+  
+    interactions.append("text")
+      .attr("class", "atom-label")
+      .attr("x", centerX + dx)
+      .attr("y", centerY + dy)
+      .text(allCharacters[i])
+
+    interactions.append("line")
+      .attr("class", "atom-edge")
+      .attr("x1", centerX + Math.sin(rotation) * radius)
+      .attr("y1", centerY + Math.cos(rotation) * radius)
+      .attr("x2", centerX + Math.sin(rotation) * (edgeLength + radius))
+      .attr("y2", centerY + Math.cos(rotation) * (edgeLength + radius))
+
+    //TODO
+
+    rotation += 2* Math.PI / 7;
+  }
+
+
+  //TODO
+}
+
+function countInteractions(){
+  var indexFrom;
+  var indexTo;
+  var groupSeasons = false;
+  var interactionCounts = {}
+
+  if(season == 0){
+    indexFrom = 0;
+    indexTo = 231;
+    groupSeasons = true;
+  } else if(episode == 0){
+    indexFrom = seasonStarts[season-1];
+    indexTo = seasonStarts[season];
+  } else {
+    indexFrom = seasonStarts[season-1] + episode - 1;
+    indexTo = indexFrom + 1
+  }
+
+  for(let i = 0; i < allCharacters.length; i++){
+    if(allCharacters[i] == character){
+      continue;
+    }
+    interactionCounts[allCharacters[i]] = Array(indexTo-indexFrom).fill(0);
+  }
+
+  for(let i = 0; i < interactionsData.length; i++){
+    var index = interactionsData[i]["EpisodeID"];
+    if(index < indexFrom || index >= indexTo){
+      continue;
+    }
+    if(interactionsData[i]["Character"] != character){
+      continue;
+    }
+
+    var replyTo = interactionsData[i]["ReplyTo"];
+    if(replyTo == character){
+      continue;
+    }
+
+    if(groupSeasons){
+      interactionCounts[replyTo][idToSeason(index) - 1] += 1;
+    } else {
+      interactionCounts[replyTo][index-indexFrom] += 1;
+    }
+  }
+  return interactionCounts;
+}
+
+function idToSeason(episodeID){
+  var s = 0;
+  for(let i = 0; i < seasonStarts.length; i++){
+    if(episodeID < seasonStarts[i]){
+      return s;
+    }
+    s++;
+  }
+  return s;
 }

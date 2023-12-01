@@ -1,0 +1,47 @@
+body{
+	background:#ffffff;
+	/*margin-top:50px;*/
+	font: 15px "Trebuchet MS";
+	color:#000000;
+
+}
+
+
+#streamgraph{
+  width:100%;
+  height:50vh;
+  /*border:1px solid red;*/
+  /*margin-right:10px;*/
+  float:left;
+}
+
+#interactions{
+  width:45%;
+  height:50vh;
+  /*border:1px solid red;*/
+  font-size: calc(2vw + 2vh);
+  float:left;
+}
+
+#wordcloud{
+  width:55%;
+  height:45vh;
+  /*border:1px solid red;*/
+  font-size: calc(2vw + 2vh);
+  float:left;
+}
+
+.label{
+  font-family: 'PT Sans',sans-serif;
+  opacity: 1;
+  font-size: 30%;
+}
+
+.tooltip{
+  font-size: x-small;
+  background-color: #ffffff;
+  border: solid;
+  border-width: "1px";
+  border-radius: "5px";
+  padding: "10px";
+}

@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>PV251</title>
+    <title>The Big Bang Theory Series</title>
     <link href="./public/main.css" rel="stylesheet">
     <script type="module" src="public/plots.js"></script>
     
@@ -25,6 +25,8 @@
       <option value=10>Season 10</option>
     </select>
     <select name="episode_select" id="episode_select" disabled="true"></select>
+
+    <button id="info-button" onclick="alert('The streamgraph - counts of words said by characters of the series. Hues correspond to gender, the Other area aggregates all characters not mentioned in graph.\n\nThe molecule - interactions between the characters. By interaction is meant that the center character has their replicas right after the outer one. The width of connection corresponds to number of interactions by episode (or by season if no season is chosen). \n\nThe words - the most frequent uncommon words said by the character. The words being in top 1000 word list from enTenTen21 corpus were filtered out with intention to get more interesting results. \n\nData were preprocessed to mask the most common words when displaying the frequent terms, so the words shown are not those ocurred the most times.')">Help</button>
   </div>
 	<div id="streamgraph"></div>
 	<div id="interactions"></div>

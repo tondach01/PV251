@@ -7,5 +7,9 @@
 
 `./D3_version/public/data` - CSV data files and Python scripts used to create them
 ## Start of the visualization
-After cloning the repository, change the working directory to `./D3_version` and run `node ./index.js` in the terminal
+After cloning the repository, change the working directory to `./D3_version` and run `node ./index.js` in the terminal. A message should pop up:
+
+`App listening on port 3000!`
+
+The view should be then available at `http://localhost:3000/` (note: if the layout is not correct at first, refreshing the browser should work things out).
 
